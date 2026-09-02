@@ -1,0 +1,9 @@
+.wrangler/
+node_modules/
+wrangler.jsonc
+build.ps1
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
