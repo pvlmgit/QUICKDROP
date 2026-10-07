@@ -1,6 +1,7 @@
 .wrangler/
 node_modules/
 wrangler.jsonc
+wrangler.preview.jsonc
 build.ps1
 
 .dev.vars*

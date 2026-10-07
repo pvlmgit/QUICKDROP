@@ -112,6 +112,28 @@
     .bar-pct { font-family: var(--mono); font-size: clamp(0.75rem, 2.2vw, 0.85rem); color: var(--muted); font-variant-numeric: tabular-nums; }
     .bar { height: 5px; background: rgba(255, 255, 255, 0.07); border-radius: 99px; overflow: hidden; }
     .bar-fill { height: 100%; width: 0%; background: var(--gradient); transition: width 0.2s ease; }
+    /* ---------- contribute (shared folder) ---------- */
+    .contribute {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 16px 0 4px;
+      padding: 14px 16px;
+      background: rgba(244, 63, 94, 0.07);
+      border: 1px solid rgba(244, 63, 94, 0.32);
+      border-radius: 12px;
+    }
+    .contribute.hidden { display: none; }
+    .contribute-text {
+      flex: 1;
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.83rem;
+      line-height: 1.5;
+    }
+    .contribute-text strong { color: var(--text); display: block; margin-bottom: 2px; }
+    .contribute .btn { flex: none; width: auto; margin: 0; padding: 11px 18px; }
+
     .note { color: var(--muted); font-size: clamp(0.72rem, 2vw, 0.82rem); margin-top: 6px; }
     .note:empty { display: none; }
     .hidden { display: none !important; }
@@ -237,6 +259,15 @@
         
       </div>
       <div class="status" id="status"></div>
+
+      <div class="contribute hidden" id="contribute">
+        <div class="contribute-text">
+          <strong>This is a shared folder.</strong>
+          Anyone with the code or link can add files to it, and everyone sees
+          everything anyone uploads.
+        </div>
+        <a class="btn" id="contributeBtn" href="#">Add your files</a>
+      </div>
 
       <div class="list-exp hidden" id="listExp"></div>
       <div id="list"></div>
@@ -365,6 +396,9 @@
       var downloaded = new Set();
       var currentLbFile = null;
       var allRooms = [];
+      // The 6-digit code, when the visitor arrived with one. Kept so a shared
+      // folder can build its "add files" link back to the homepage.
+      var sharedCode = new URLSearchParams(location.search).get("code");
 
       /* ---------- file-type helpers ---------- */
 
@@ -650,6 +684,23 @@
         var rawRooms = manifestData.rooms && manifestData.rooms.length > 0
           ? manifestData.rooms
           : allRooms.length > 0 ? allRooms : [{ roomId: roomid, key: location.hash.slice(1) }];
+
+        // `?file=FID` (or `?files=a,b`) narrows this page to specific files. That is
+        // what a per-file share link from the homepage points at, so the
+        // recipient sees one file rather than the whole folder.
+        var wanted = new URLSearchParams(location.search).get("file");
+        var wantedMany = new URLSearchParams(location.search).get("files");
+        var allowSet = null;
+        if (wanted) allowSet = new Set([wanted]);
+        else if (wantedMany) allowSet = new Set(wantedMany.split(",").filter(Boolean));
+
+        // A shared folder stays open for contributions, so offer it here too.
+        // Anyone who landed with a code keeps it in the URL, which is what
+        // makes the join link work; without a code we cannot build one.
+        if (manifestData.shared && sharedCode) {
+          el("contribute").classList.remove("hidden");
+          el("contributeBtn").href = "/?join=" + encodeURIComponent(sharedCode);
+        }
         allRooms = rawRooms.map(function (r) {
           return { roomId: r.roomId || r.folderId, key: r.key || r.secretKey || "" };
         });
@@ -671,6 +722,7 @@
             var fid = fids[i];
             var meta = list[fid];
             if (meta.complete === false) { skipped++; continue; }
+            if (allowSet && !allowSet.has(fid)) continue;
             var name;
             try {
               name = td.decode(await decryptBytes(rk, b64ToBytes(meta.filename)));
@@ -681,7 +733,11 @@
             files.push({ fid: fid, meta: meta, name: name || "file-" + fid, roomId: room.roomId, roomKey: rk });
           }
         }
-        if (files.length === 0) throw new Error("No downloadable files in this room.");
+        if (files.length === 0) {
+          throw new Error(allowSet
+            ? "That file is no longer in this folder."
+            : "No downloadable files in this room.");
+        }
         if (skipped) el("note").textContent = skipped + " file(s) skipped (upload still in progress).";
         renderList();
         var total = 0;
@@ -854,8 +910,18 @@
           if (!r.ok) throw new Error("Code not found or expired.");
           var data = await r.json();
           if (!data.roomId || !data.key) throw new Error("Invalid code data.");
-          var newUrl = location.pathname + "?roomid=" + encodeURIComponent(data.roomId) + "#" + encodeURIComponent(data.key);
+          // Keep `code` in the URL so a shared folder can still offer "add files"
+          // after the redirect to roomid+key. Any per-file filter must survive
+          // too, or a single-file share link would silently show the whole folder.
+          var params = new URLSearchParams();
+          params.set("roomid", data.roomId);
+          params.set("code", code);
+          var sp = new URLSearchParams(location.search);
+          if (sp.get("file")) params.set("file", sp.get("file"));
+          if (sp.get("files")) params.set("files", sp.get("files"));
+          var newUrl = location.pathname + "?" + params.toString() + "#" + encodeURIComponent(data.key);
           history.replaceState(null, "", newUrl);
+          sharedCode = code;
           cryptoKey = await importSecretKey(b64urlToBytes(data.key));
           roomKeys = {};
           roomKeys[data.roomId] = cryptoKey;

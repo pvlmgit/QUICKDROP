@@ -135,6 +135,140 @@
     .uploader.has-files .hist-link,
     .uploader.uploading .hist-link { display: none; }
 
+    /* ---------- mode switch (one-time send / shared folder) ---------- */
+    .mode-switch {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      margin-bottom: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 9px 6px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .mode-btn[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+    }
+    .mode-hint {
+      margin: -6px 0 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      opacity: 0.85;
+    }
+    .mode-hint[hidden] { display: none; }
+
+    /* ---------- shared folder banner ---------- */
+    .shared-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin-bottom: 14px;
+      padding: 11px 13px;
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: 11px;
+      color: var(--text);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      text-align: left;
+    }
+    .shared-banner { display: flex; }
+    .shared-banner.hidden { display: none; }
+
+    /* ---------- shared folder: existing files ---------- */
+    .shared-files {
+      margin-bottom: 16px;
+      padding: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .shared-files.hidden { display: none; }
+    .sf-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .sf-head .r-label { margin: 0; }
+    .sf-list { display: flex; flex-direction: column; }
+    .sf-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-top: 1px solid var(--border);
+    }
+    .sf-row:first-child { border-top: none; }
+    .sf-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 0.86rem;
+    }
+    .sf-size { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+    .sf-mine {
+      flex: none;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(244, 63, 94, 0.16);
+      color: var(--accent);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .sf-empty { color: var(--muted); font-size: 0.82rem; padding: 4px 0; }
+    .sf-by { color: var(--muted); font-size: 0.7rem; }
+    .sf-acts { display: flex; align-items: center; gap: 4px; flex: none; }
+    .sf-act {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .sf-act svg { width: 15px; height: 15px; }
+    .sf-act:hover { color: var(--text); border-color: var(--border-strong); background: rgba(255,255,255,0.04); }
+    .sf-act.danger:hover { color: var(--danger); border-color: var(--danger); }
+    .sf-act.done { color: var(--ok); border-color: var(--ok); }
+    .sb-dot {
+      flex: none;
+      width: 7px;
+      height: 7px;
+      margin-top: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: sb-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes sb-pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.25; }
+    }
+
     .history-view { text-align: left; }
     .history-view .history-head { margin-bottom: 14px; }
     .history-view h2 { font-size: 1.35rem; margin-bottom: 4px; letter-spacing: -0.02em; }
@@ -563,6 +697,9 @@
     .code-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .code-value { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.15em; font-family: monospace; color: var(--accent); }
     .code-row .btn { width: 100%; }
+    .join-link { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .join-link.hidden { display: none; }
+    .join-link .r-label { margin-bottom: 8px; }
 
     .code-entry-home { margin-top: 16px; display: flex; flex-direction: column; align-items: center; }
     .code-entry-home[hidden] { display: none !important; }
@@ -617,6 +754,22 @@
       <p class="sub">No Size Limits · E2E Encrypted · No Sign-up</p>
       <div class="layout">
         <div class="uploader">
+          <div class="mode-switch" role="group" aria-label="Sharing mode">
+            <button class="mode-btn" id="modeSendBtn" type="button" aria-pressed="true">One-time send</button>
+            <button class="mode-btn" id="modeFolderBtn" type="button" aria-pressed="false">Shared folder</button>
+          </div>
+          <p class="mode-hint" id="modeHint" hidden></p>
+          <div class="shared-banner hidden" id="sharedBanner">
+            <span class="sb-dot" aria-hidden="true"></span>
+            <span id="sharedBannerText"></span>
+          </div>
+          <div class="shared-files hidden" id="sharedFiles">
+            <div class="sf-head">
+              <span class="r-label" id="sharedFilesLabel">Files in this folder</span>
+              <button class="clear-btn" id="sharedRefreshBtn" type="button">Refresh</button>
+            </div>
+            <div class="sf-list" id="sharedFilesList"></div>
+          </div>
           <div class="dropzone" id="dropzone">
           <div class="dz-icon">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -648,6 +801,7 @@
         </div>
 
         <div class="result" id="result">
+          <div id="sendLinkBlock">
           <div class="result-head">
             <div class="r-label">Your link</div>
             <div class="result-icons">
@@ -663,13 +817,24 @@
               <a class="btn" id="openLinkBtn" href="#" target="_blank" rel="noopener">Open</a>
             </div>
           </div>
+          </div>
           <p class="r-note" id="resultNote"></p>
           <p class="r-note" id="retentionNote"></p>
           <div class="code-display hidden" id="codeBox">
-            <div class="r-label">Or share this code</div>
+            <div class="r-label" id="shareWithLabel">Or share this code</div>
             <div class="code-row">
               <span class="code-value" id="codeValue"></span>
               <button class="btn ghost" id="copyCodeBtn" type="button">Copy</button>
+            </div>
+          </div>
+          <div class="join-link hidden" id="joinLink">
+            <div class="r-label">Share this link — anyone who opens it can add files and see everything</div>
+            <div class="link-row">
+              <input class="link-input" id="joinLinkInput" readonly value="" />
+              <div class="btn-row">
+                <button class="btn" id="copyJoinLinkBtn" type="button">Copy link</button>
+                <a class="btn ghost" id="openJoinLinkBtn" href="#" target="_blank" rel="noopener">Open</a>
+              </div>
             </div>
           </div>
         </div>
@@ -3127,6 +3292,40 @@
       };
     }
 
+    /* ---------- sharing mode ---------- */
+
+    var currentMode = "send";
+
+    function setMode(mode) {
+      currentMode = mode;
+      el("modeSendBtn").setAttribute("aria-pressed", String(mode === "send"));
+      el("modeFolderBtn").setAttribute("aria-pressed", String(mode === "folder"));
+      var hint = el("modeHint");
+      if (mode === "folder") {
+        hint.textContent = "Both of you can add files to one link. Folder closes after 3d 18h.";
+        hint.hidden = false;
+      } else {
+        hint.hidden = true;
+      }
+      var dzSub = document.querySelector(".dropzone .dz-note");
+      if (dzSub) dzSub.textContent = mode === "folder"
+        ? "Reusable until it expires · 3d 18h"
+        : "Files auto-delete after 3d 18h";
+      el("uploadBtn").textContent = mode === "folder"
+        ? (sharedAnchor ? "Add files to shared folder" : "Create shared folder")
+        : "Create link & upload";
+      if (mode === "send") sharedAnchor = null;
+      // Leaving folder mode also leaves the folder we were contributing to.
+      el("sharedBanner").classList.add("hidden");
+      el("sharedFiles").classList.add("hidden");
+      el("sendLinkBlock").style.display = "";
+      el("joinLink").classList.add("hidden");
+      el("shareWithLabel").textContent = "Or share this code";
+    }
+
+    el("modeSendBtn").addEventListener("click", function () { setMode("send"); });
+    el("modeFolderBtn").addEventListener("click", function () { setMode("folder"); });
+
     /* ---------- file.kiwi API ---------- */
 
     async function createFolder(title, files, keys) {
@@ -3135,7 +3334,7 @@
         encryptedNames.push(arrayToB64(await keys.encryptFilename(files[i].name)));
       }
       var body = {
-        mode: "send",
+        mode: currentMode === "folder" ? "share" : "send",
         encryption: { ske: keys.ske },
         files: files.map(function (f, idx) {
           return {
@@ -3266,7 +3465,15 @@
 
     function setBusy(busy) {
       uploadBtn.disabled = busy;
-      uploadBtn.textContent = busy ? "Encrypting & uploading…" : "Create link & upload";
+      if (busy) {
+        uploadBtn.textContent = "Encrypting & uploading…";
+        return;
+      }
+      // Derive the idle label from the mode instead of hardcoding it, otherwise
+      // finishing an upload resets the button to the one-time-send wording.
+      uploadBtn.textContent = currentMode === "folder"
+        ? (sharedAnchor ? "Add more files" : "Create shared folder")
+        : "Create link & upload";
     }
 
     function showOverall(totalBytes) {
@@ -3626,43 +3833,92 @@
 
         if (uploadCancelled) throw new Error("__CANCELLED__");
 
-        if (rooms.length > 1) {
+        if (rooms.length > 1 || currentMode === "folder") {
           var manifestRooms = rooms.map(function (r) { return { roomId: r.folderId, key: r.secretKey }; });
-          await fetch("/_proxy/manifest?roomId=" + encodeURIComponent(rooms[0].folderId), {
+          // Shared folders append to the anchor's manifest so each person's
+          // upload lands in the same folder listing. One-time sends anchor on
+          // their own first room and replace, as before.
+          var anchorRoomId = sharedAnchor && currentMode === "folder"
+            ? sharedAnchor.roomId
+            : rooms[0].folderId;
+          await fetch("/_proxy/manifest?roomId=" + encodeURIComponent(anchorRoomId), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rooms: manifestRooms, ttl: 324000 }),
+            body: JSON.stringify({
+              rooms: manifestRooms,
+              ttl: 324000,
+              append: !!(sharedAnchor && currentMode === "folder"),
+              shared: currentMode === "folder"
+            }),
             keepalive: true
           });
         }
 
         linkMade = true;
-        uploadBtn.hidden = true;
         var baseUrl = window.location.origin;
-        var shareUrl = baseUrl + "/" + rooms[0].folderId + "#" + rooms[0].secretKey;
-        currentShort = baseUrl.replace(/^https?:\/\//, "") + "/" + rooms[0].folderId;
-        linkInput.value = shareUrl;
-        el("openLinkBtn").href = shareUrl;
-        resultNote.textContent = rooms.length > 1
-          ? "Your link covers " + rooms.length + " rooms (" + files.length + " files)."
-          : "Your link is ready. Files are still uploading.";
+
+        if (sharedAnchor && currentMode === "folder") {
+          // Contributing to someone else's folder: the link stays the anchor's,
+          // and we keep the dropzone and button live so more files can be added
+          // without reloading the page.
+          var anchorUrl = baseUrl + "/" + sharedAnchor.roomId + "#" + sharedAnchor.key;
+          linkInput.value = anchorUrl;
+          el("openLinkBtn").href = anchorUrl;
+          currentShort = baseUrl.replace(/^https?:\/\//, "") + "/" + sharedAnchor.roomId;
+          restoreDropzone();
+          uploaderCard.classList.remove("uploading");
+          uploadBtn.hidden = false;
+          uploadBtn.textContent = "Add more files";
+          // Clear the staged selection so the next click starts a fresh add.
+          selectedFiles = [];
+          fileData.clear();
+          rowEls.clear();
+          fileList.innerHTML = "";
+          el("fileListLabel").hidden = true;
+          el("clearAllBtn").hidden = true;
+        } else {
+          uploadBtn.hidden = true;
+          var shareUrl = baseUrl + "/" + rooms[0].folderId + "#" + rooms[0].secretKey;
+          currentShort = baseUrl.replace(/^https?:\/\//, "") + "/" + rooms[0].folderId;
+          linkInput.value = shareUrl;
+          el("openLinkBtn").href = shareUrl;
+        }
+        if (currentMode === "folder") {
+          resultNote.textContent = "Shared folder ready. Send this code — anyone with it can add files too.";
+        } else {
+          resultNote.textContent = rooms.length > 1
+            ? "Your link covers " + rooms.length + " rooms (" + files.length + " files)."
+            : "Your link is ready. Files are still uploading.";
+        }
         el("retentionNote").textContent = "Free downloads · auto-delete after 3d 18h";
         resultBox.classList.add("visible");
-        histAdd({ id: rooms[0].folderId, url: shareUrl, files: files.length, size: totalBytes, created: Date.now() });
+        // Our own upload just landed in the shared folder, so refresh the list
+        // rather than making people press Refresh to see their own file.
+        if (currentMode === "folder" && sharedAnchor) loadSharedFiles();
+        histAdd({ id: rooms[0].folderId, url: linkInput.value, files: files.length, size: totalBytes, created: Date.now() });
 
-        fetch("/_proxy/code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roomId: rooms[0].folderId, key: rooms[0].secretKey, ttl: 324000 }),
-          keepalive: true
-        }).then(function (r) { return r.json(); }).then(function (d) {
-          if (d.code) {
-            el("codeValue").textContent = d.code;
-            el("codeBox").classList.remove("hidden");
-          }
-        }).catch(function (e) {
-          console.error("Code creation failed:", e);
-        });
+        // Only mint a code when we own the anchor. Someone contributing to an
+        // existing folder must keep the owner's code, not get a second one.
+        if (!(sharedAnchor && currentMode === "folder")) {
+          fetch("/_proxy/code", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ roomId: rooms[0].folderId, key: rooms[0].secretKey, ttl: 324000 }),
+            keepalive: true
+          }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d.code) {
+              el("codeValue").textContent = d.code;
+              el("codeBox").classList.remove("hidden");
+              if (currentMode === "folder") showJoinLink(d.code);
+            }
+          }).catch(function (e) {
+            console.error("Code creation failed:", e);
+          });
+        } else {
+          el("codeValue").textContent = sharedAnchor.code;
+          el("codeBox").classList.remove("hidden");
+          showJoinLink(sharedAnchor.code);
+        }
 
         setOverall(totalBytes);
         overallLabel.textContent = "Done";
@@ -3671,9 +3927,13 @@
         statusArea.textContent = "";
         statusArea.className = "status-area";
         backHomeBtn.hidden = false;
-        resultNote.textContent = remaining
-          ? "Upload complete. Upload the rest or share this link."
-          : "Upload complete. Copy the link and share it with the key.";
+        resultNote.textContent = (sharedAnchor && currentMode === "folder")
+          ? "Added to the shared folder. Everyone with code " + sharedAnchor.code + " can see these files."
+          : currentMode === "folder"
+            ? "Shared folder ready. Keep this code — send it to anyone and they can add files too."
+            : remaining
+            ? "Upload complete. Upload the rest or share this link."
+            : "Upload complete. Copy the link and share it with the key.";
       } catch (err) {
         if (uploadCancelled || err.name === "AbortError") {
           hideOverall();
@@ -3744,17 +4004,322 @@
     var copyCodeBtn = el("copyCodeBtn");
     copyCodeBtn.dataset.label = "Copy";
     bindCopy(copyCodeBtn, function () { return el("codeValue").textContent; });
+    bindCopy(copyJoinLinkBtn, function () { return el("joinLinkInput").value; });
+
+    /* ---------- joining a shared folder by code ---------- */
+
+    var sharedAnchor = null; // { roomId, key } of the folder we contribute to
+
+    // The link we hand out is /?join=CODE so the other person lands on the
+    // homepage already in shared-folder mode with the code filled in. Without
+    // this they get a read-only download link and cannot add anything.
+    function joinLinkFor(code) {
+      return window.location.origin + "/?join=" + encodeURIComponent(code);
+    }
+
+    /* ---------- listing files already in the shared folder ---------- */
+
+    function b64ToBytes(b64) {
+      var bin = atob(b64);
+      var out = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    function b64urlToBytes(s) {
+      s = s.replace(/-/g, "+").replace(/_/g, "/");
+      while (s.length % 4) s += "=";
+      return b64ToBytes(s);
+    }
+    function formatSize(b) {
+      if (!b) return "0 B";
+      if (b < 1024) return b + " B";
+      var units = ["KB", "MB", "GB", "TB"];
+      var u = -1;
+      do { b /= 1024; u++; } while (b >= 1024 && u < units.length - 1);
+      return b.toFixed(b >= 100 ? 0 : 1) + " " + units[u];
+    }
+
+    // RFC 8188 ECE decryption, same as download.html, so the homepage can read
+    // the filenames of files other people uploaded into the shared folder.
+    var decodeText = new TextDecoder();
+    async function eceDecrypt(cryptoKey, enc) {
+      var salt = enc.slice(0, 16);
+      var dv = new DataView(enc.buffer, enc.byteOffset, enc.byteLength);
+      var rs = dv.getUint32(16);
+      var idlen = enc[20];
+      var off = 21 + idlen;
+      var encText = new TextEncoder();
+
+      var cek = await crypto.subtle.deriveKey(
+        { name: "HKDF", hash: "SHA-256", salt: salt, info: encText.encode("Content-Encoding: aes128gcm\u0000") },
+        cryptoKey, { name: "AES-GCM", length: 128 }, false, ["decrypt"]
+      );
+      var nonceBase = new Uint8Array(await crypto.subtle.deriveBits(
+        { name: "HKDF", hash: "SHA-256", salt: salt, info: encText.encode("Content-Encoding: nonce\u0000") },
+        cryptoKey, 96
+      ));
+
+      var out = [];
+      var seq = 0;
+      while (off < enc.length) {
+        var rec = enc.subarray(off, Math.min(off + rs, enc.length));
+        off += rec.length;
+        var nonce = nonceBase.slice();
+        var nv = new DataView(nonce.buffer, nonce.byteOffset, nonce.byteLength);
+        nv.setUint32(nonce.byteLength - 4, (nv.getUint32(nonce.byteLength - 4) ^ seq) >>> 0, false);
+        var plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce, tagLength: 128 }, cek, rec);
+        out.push(new Uint8Array(plain));
+        seq++;
+      }
+      var total = 0;
+      for (var i = 0; i < out.length; i++) total += out[i].length;
+      var merged = new Uint8Array(total);
+      var p = 0;
+      for (var j = 0; j < out.length; j++) { merged.set(out[j], p); p += out[j].length; }
+      return merged;
+    }
+
+    // Walk every room in the manifest and render one combined list. Each room
+    // is encrypted with its own key, so they are decrypted separately.
+    async function loadSharedFiles() {
+      var listEl = el("sharedFilesList");
+      if (!sharedAnchor) return;
+      listEl.textContent = "Loading files…";
+      el("sharedFiles").classList.remove("hidden");
+      try {
+        var manifest = await (await fetch("/_proxy/manifest?roomId=" + encodeURIComponent(sharedAnchor.roomId))).json();
+        var rooms = (manifest.rooms && manifest.rooms.length) ? manifest.rooms : [sharedAnchor];
+        var rows = [];
+
+        for (var rm = 0; rm < rooms.length; rm++) {
+          var room = rooms[rm];
+          var key = room.key || room.secretKey || "";
+          if (!key) continue;
+          var cryptoKey;
+          try { cryptoKey = await crypto.subtle.importKey("raw", b64urlToBytes(key), "HKDF", false, ["deriveKey", "deriveBits"]); }
+          catch (e) { continue; }
+
+          var res = await fetch("/_proxy/files?roomid=" + encodeURIComponent(room.roomId || room.folderId));
+          if (!res.ok) continue;
+          var data = await res.json();
+          var list = data.files || {};
+          for (var fid in list) {
+            if (!Object.prototype.hasOwnProperty.call(list, fid)) continue;
+            var meta = list[fid];
+            if (meta.complete === false) continue;
+            var name = null;
+            try { name = decodeText.decode(await eceDecrypt(cryptoKey, b64ToBytes(meta.filename))); }
+            catch (e) { name = null; }
+            if (!name || name.indexOf("__thumb_") === 0) continue;
+            rows.push({
+              name: name,
+              size: meta.filesize || 0,
+              fid: fid,
+              roomId: room.roomId || room.folderId
+            });
+          }
+        }
+
+        rows.sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+        if (rows.length === 0) {
+          listEl.innerHTML = '<div class="sf-empty">No files yet. Add the first one below.</div>';
+        } else {
+          listEl.innerHTML = "";
+          for (var r2 = 0; r2 < rows.length; r2++) {
+            (function (item) {
+              var row = document.createElement("div");
+              row.className = "sf-row";
+
+              var nameEl = document.createElement("span");
+              nameEl.className = "sf-name";
+              nameEl.textContent = item.name;
+              nameEl.title = item.name;
+
+              var sizeEl = document.createElement("span");
+              sizeEl.className = "sf-size";
+              sizeEl.textContent = formatSize(item.size);
+
+              // Each action targets one specific file, never the whole folder.
+              var acts = document.createElement("span");
+              acts.className = "sf-acts";
+
+              var dl = document.createElement("button");
+              dl.className = "sf-act";
+              dl.type = "button";
+              dl.title = "Download " + item.name;
+              dl.setAttribute("aria-label", "Download " + item.name);
+              dl.innerHTML = ICON_DOWNLOAD;
+              dl.addEventListener("click", function () {
+                window.open(fileUrl(item), "_blank", "noopener");
+              });
+
+              var sh = document.createElement("button");
+              sh.className = "sf-act";
+              sh.type = "button";
+              sh.title = "Share " + item.name;
+              sh.setAttribute("aria-label", "Share " + item.name);
+              sh.innerHTML = ICON_SHARE;
+              sh.addEventListener("click", function () {
+                copyText(fileUrl(item), function () {
+                  sh.classList.add("done");
+                  var prev = sh.innerHTML;
+                  sh.innerHTML = ICON_OK;
+                  setTimeout(function () {
+                    sh.classList.remove("done");
+                    sh.innerHTML = prev;
+                  }, 1200);
+                });
+              });
+
+              var del = document.createElement("button");
+              del.className = "sf-act danger";
+              del.type = "button";
+              del.title = "Remove " + item.name + " from this folder";
+              del.setAttribute("aria-label", "Remove " + item.name + " from this folder");
+              del.innerHTML = ICON_TRASH;
+              del.addEventListener("click", function () {
+                removeFromFolder(item, row);
+              });
+
+              acts.appendChild(dl);
+              acts.appendChild(sh);
+              acts.appendChild(del);
+
+              row.appendChild(nameEl);
+              row.appendChild(sizeEl);
+              row.appendChild(acts);
+              listEl.appendChild(row);
+            })(rows[r2]);
+          }
+        }
+        el("sharedFilesLabel").textContent = "Files in this folder (" + rows.length + ")";
+      } catch (err) {
+        listEl.innerHTML = '<div class="sf-empty">Could not load the file list.</div>';
+      }
+    }
+
+    el("sharedRefreshBtn").addEventListener("click", function () { loadSharedFiles(); });
+
+    // Link that opens the download page showing exactly one file. The code is
+    // kept in the URL so that page can still offer "add files" for a shared
+    // folder, and `file` narrows the list to this file.
+    function fileUrl(item) {
+      var base = window.location.origin + "/download.html?code=" + encodeURIComponent(sharedAnchor.code);
+      return base + "&file=" + encodeURIComponent(item.fid);
+    }
+
+    var ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    var ICON_SHARE = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5" stroke="currentColor" stroke-width="2"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" stroke="currentColor" stroke-width="2"/></svg>';
+    var ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><polyline points="3 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    // Removing one file drops its room from the manifest. When a room holds
+    // several files we keep the room and let the page hide the single file,
+    // so we never silently take away more than the person asked for.
+    async function removeFromFolder(item, row) {
+      if (!confirm('Remove "' + item.name + '" from this shared folder?')) return;
+      row.style.opacity = "0.4";
+      try {
+        var manifest = await (await fetch("/_proxy/manifest?roomId=" + encodeURIComponent(sharedAnchor.roomId))).json();
+        var rooms = manifest.rooms || [];
+        var target = null;
+        var howMany = 0;
+        for (var i = 0; i < rooms.length; i++) {
+          var rid = rooms[i].roomId || rooms[i].folderId;
+          if (rid !== item.roomId) continue;
+          var res = await fetch("/_proxy/files?roomid=" + encodeURIComponent(rid));
+          if (!res.ok) continue;
+          var data = await res.json();
+          howMany = Object.keys(data.files || {}).length;
+          target = rid;
+          break;
+        }
+        if (!target) throw new Error("File not found in the folder.");
+
+        if (howMany <= 1) {
+          await fetch("/_proxy/manifest?roomId=" + encodeURIComponent(sharedAnchor.roomId), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rooms: [], remove: [target], ttl: 324000 })
+          });
+        } else {
+          // Multi-file room: hide just this one via a per-room hide list.
+          await fetch("/_proxy/manifest?roomId=" + encodeURIComponent(sharedAnchor.roomId), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rooms: [], remove: [], hide: [{ roomId: target, fid: item.fid }], ttl: 324000 })
+          });
+        }
+        await loadSharedFiles();
+      } catch (err) {
+        row.style.opacity = "";
+        setStatus("Could not remove that file: " + err.message, true);
+      }
+    }
+
+    function showJoinLink(code) {
+      var url = joinLinkFor(code);
+      el("joinLinkInput").value = url;
+      el("openJoinLinkBtn").href = url;
+      el("joinLink").classList.remove("hidden");
+      el("shareWithLabel").textContent = "Or share this code";
+      // In folder mode the read-only download link is the wrong thing to send,
+      // so hide it and leave the join link as the single thing to copy.
+      el("sendLinkBlock").style.display = "none";
+    }
+
+    // Resolving a code tells us the anchor room. Files we upload then get
+    // appended to that anchor's manifest, which is how two people end up
+    // sharing one code without file.kiwi ever needing a second write path.
+    async function resolveSharedCode(code) {
+      var r = await fetch("/_proxy/code?code=" + encodeURIComponent(code));
+      if (!r.ok) throw new Error("That code is expired or not found.");
+      return await r.json(); // { roomId, key }
+    }
 
     var codeInputHome = el("codeInputHome");
     var getFilesBtn = el("getFilesBtn");
     getFilesBtn.addEventListener("click", function () {
       var code = (codeInputHome.value || "").trim();
       if (!code || !/^\d{6}$/.test(code)) { codeInputHome.focus(); codeInputHome.select(); return; }
+      if (currentMode === "folder") {
+        setBusy(true);
+        setStatus("Looking up shared folder…");
+        resolveSharedCode(code).then(function (info) {
+          sharedAnchor = { roomId: info.roomId, key: info.key, code: code };
+          setBusy(false);
+          setStatus("");
+          setMode("folder");
+          el("sharedBanner").classList.remove("hidden");
+          el("sharedBannerText").textContent =
+            "Contributing to shared folder " + code + ". Files you add appear for everyone with this code.";
+          el("uploadBtn").hidden = false;
+          el("uploadBtn").textContent = "Add files to shared folder";
+          uploaderCard.classList.add("has-files");
+          loadSharedFiles();
+        }).catch(function (err) {
+          setBusy(false);
+          setStatus(err.message, true);
+        });
+        return;
+      }
       window.location.href = "/download.html?code=" + code;
     });
     codeInputHome.addEventListener("keydown", function (e) {
       if (e.key === "Enter") { getFilesBtn.click(); }
     });
+
+    // Landing on /?join=CODE should do exactly what typing the code and
+    // pressing "Get files" does, so the link we hand out is self-explanatory.
+    (function autoJoinFromUrl() {
+      var m = /[?&]join=([0-9]{6})/.exec(location.search);
+      if (!m) return;
+      history.replaceState(null, "", location.pathname);
+      setMode("folder");
+      codeInputHome.value = m[1];
+      getFilesBtn.click();
+    })();
 
     shareBtn.addEventListener("click", function () {
       if (navigator.share) {
