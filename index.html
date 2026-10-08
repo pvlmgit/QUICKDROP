@@ -238,6 +238,7 @@
     .sf-empty { color: var(--muted); font-size: 0.82rem; padding: 4px 0; }
     .sf-by { color: var(--muted); font-size: 0.7rem; }
     .sf-acts { display: flex; align-items: center; gap: 4px; flex: none; }
+
     .sf-act {
       display: inline-flex;
       align-items: center;
@@ -287,6 +288,17 @@
     .hist-card .hc-exp { font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
     .hist-card .hc-exp.ok { color: var(--accent); }
     .hist-card .hc-exp.gone { color: var(--danger); }
+    .hist-card .hc-kind {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .hist-card .hc-kind.hc-shared { background: rgba(244, 63, 94, 0.14); color: var(--accent); }
+    .hist-card .hc-kind.hc-onetime { background: rgba(255, 255, 255, 0.06); color: var(--muted); }
     .hist-card .hc-meta { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
     .hist-card .hc-actions { display: flex; gap: 10px; margin-top: 12px; }
     .hist-card .hc-actions .btn { flex: 1; margin-top: 0; padding: 8px 14px; font-size: 0.82rem; }
@@ -356,11 +368,25 @@
       .wrap { max-width: 1180px; }
       .layout { flex-direction: row; align-items: flex-start; justify-content: center; }
       .layout .uploader { flex: 0 1 680px; min-width: 0; }
-      .dropzone { min-height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-      .dropzone .dz-icon { width: 64px; height: 64px; margin-bottom: 18px; }
-      .dropzone .dz-title { font-size: 1.6rem; }
-      .dropzone .dz-sub { font-size: 1.1rem; margin-top: 8px; }
-      .uploader.has-files .dropzone { min-height: 200px; }
+      /* Compact: the panel beside it carries the folder details, so the drop
+         target only needs to be big enough to aim at. */
+      .dropzone { min-height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .dropzone .dz-icon { width: 48px; height: 48px; margin-bottom: 12px; }
+      .dropzone .dz-title { font-size: 1.25rem; }
+      .dropzone .dz-sub { font-size: 0.9rem; margin-top: 6px; }
+      .uploader.has-files .dropzone { min-height: 132px; }
+    }
+    /* Small phones: keep the drop target short so the card fits on screen. */
+    @media (max-width: 420px) {
+      .dropzone { padding: 20px 12px; }
+      .dropzone .dz-icon { width: 34px; height: 34px; margin-bottom: 8px; }
+      .dropzone .dz-title { font-size: 0.95rem; }
+      .dropzone .dz-sub { font-size: 0.74rem; }
+    }
+    /* Large monitors: stop the card from stretching into a sea of empty space. */
+    @media (min-width: 1600px) {
+      .wrap { max-width: 1320px; }
+      .layout .uploader { flex: 0 1 720px; }
     }
 
     .btn {
@@ -3321,6 +3347,10 @@
       el("sendLinkBlock").style.display = "";
       el("joinLink").classList.add("hidden");
       el("shareWithLabel").textContent = "Or share this code";
+
+      // The dropzone stays visible in both modes: it is the primary way to pick
+      // files, whether you are starting a one-time send or adding to a folder.
+      dropzone.hidden = false;
     }
 
     el("modeSendBtn").addEventListener("click", function () { setMode("send"); });
@@ -3798,6 +3828,15 @@
         return;
       }
 
+      // Adding to a shared folder is visible to everyone holding the code, so
+      // confirm before anything is encrypted and sent. One-time sends stay
+      // No confirmation: a completed upload now lands on the download page, which
+      // is where the link, code and QR live, so there is nothing to confirm.
+      runUpload(files);
+    }
+
+    async function runUpload(files) {
+
       setBusy(true);
       resultBox.classList.remove("visible");
       setStatus("");
@@ -3895,30 +3934,55 @@
         // Our own upload just landed in the shared folder, so refresh the list
         // rather than making people press Refresh to see their own file.
         if (currentMode === "folder" && sharedAnchor) loadSharedFiles();
-        histAdd({ id: rooms[0].folderId, url: linkInput.value, files: files.length, size: totalBytes, created: Date.now() });
+        histAdd({
+          id: rooms[0].folderId,
+          url: linkInput.value,
+          files: files.length,
+          size: totalBytes,
+          created: Date.now(),
+          shared: currentMode === "folder"
+        });
 
         // Only mint a code when we own the anchor. Someone contributing to an
         // existing folder must keep the owner's code, not get a second one.
+        // The code is awaited because we navigate straight to the download page
+        // afterwards, and that page shows the code.
+        var mintedCode = null;
         if (!(sharedAnchor && currentMode === "folder")) {
-          fetch("/_proxy/code", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ roomId: rooms[0].folderId, key: rooms[0].secretKey, ttl: 324000 }),
-            keepalive: true
-          }).then(function (r) { return r.json(); }).then(function (d) {
+          try {
+            var r = await fetch("/_proxy/code", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ roomId: rooms[0].folderId, key: rooms[0].secretKey, ttl: 324000 })
+            });
+            var d = await r.json();
             if (d.code) {
+              mintedCode = d.code;
               el("codeValue").textContent = d.code;
               el("codeBox").classList.remove("hidden");
               if (currentMode === "folder") showJoinLink(d.code);
             }
-          }).catch(function (e) {
+          } catch (e) {
             console.error("Code creation failed:", e);
-          });
+          }
         } else {
+          mintedCode = sharedAnchor.code;
           el("codeValue").textContent = sharedAnchor.code;
           el("codeBox").classList.remove("hidden");
           showJoinLink(sharedAnchor.code);
         }
+
+        // Go straight to the download page: it is where the link, code and QR
+        // live now, so there is nothing to stay behind for.
+        statusArea.textContent = "Upload complete. Opening your folder…";
+        statusArea.className = "status-area";
+        resultBox.classList.remove("visible");
+        if (mintedCode) {
+          location.href = "/download.html?code=" + encodeURIComponent(mintedCode);
+        } else {
+          location.href = "/" + rooms[0].folderId + "#" + rooms[0].secretKey;
+        }
+        return;
 
         setOverall(totalBytes);
         overallLabel.textContent = "Done";
@@ -4014,7 +4078,7 @@
     // homepage already in shared-folder mode with the code filled in. Without
     // this they get a read-only download link and cannot add anything.
     function joinLinkFor(code) {
-      return window.location.origin + "/?join=" + encodeURIComponent(code);
+      return window.location.origin + "/download.html?code=" + encodeURIComponent(code);
     }
 
     /* ---------- listing files already in the shared folder ---------- */
@@ -4200,6 +4264,7 @@
     }
 
     el("sharedRefreshBtn").addEventListener("click", function () { loadSharedFiles(); });
+    
 
     // Link that opens the download page showing exactly one file. The code is
     // kept in the URL so that page can still offer "add files" for a shared
@@ -4283,42 +4348,20 @@
     getFilesBtn.addEventListener("click", function () {
       var code = (codeInputHome.value || "").trim();
       if (!code || !/^\d{6}$/.test(code)) { codeInputHome.focus(); codeInputHome.select(); return; }
-      if (currentMode === "folder") {
-        setBusy(true);
-        setStatus("Looking up shared folder…");
-        resolveSharedCode(code).then(function (info) {
-          sharedAnchor = { roomId: info.roomId, key: info.key, code: code };
-          setBusy(false);
-          setStatus("");
-          setMode("folder");
-          el("sharedBanner").classList.remove("hidden");
-          el("sharedBannerText").textContent =
-            "Contributing to shared folder " + code + ". Files you add appear for everyone with this code.";
-          el("uploadBtn").hidden = false;
-          el("uploadBtn").textContent = "Add files to shared folder";
-          uploaderCard.classList.add("has-files");
-          loadSharedFiles();
-        }).catch(function (err) {
-          setBusy(false);
-          setStatus(err.message, true);
-        });
-        return;
-      }
-      window.location.href = "/download.html?code=" + code;
+      // One place handles both cases: the download page reads the manifest and
+      // shows the add-files affordance only when the folder is shared.
+      window.location.href = "/download.html?code=" + encodeURIComponent(code);
     });
     codeInputHome.addEventListener("keydown", function (e) {
       if (e.key === "Enter") { getFilesBtn.click(); }
     });
 
-    // Landing on /?join=CODE should do exactly what typing the code and
-    // pressing "Get files" does, so the link we hand out is self-explanatory.
+    // Landing on /?join=CODE goes straight to the download page, same as typing
+    // the code. That page auto-detects shared vs one-time.
     (function autoJoinFromUrl() {
       var m = /[?&]join=([0-9]{6})/.exec(location.search);
       if (!m) return;
-      history.replaceState(null, "", location.pathname);
-      setMode("folder");
-      codeInputHome.value = m[1];
-      getFilesBtn.click();
+      location.replace("/download.html?code=" + encodeURIComponent(m[1]));
     })();
 
     shareBtn.addEventListener("click", function () {
@@ -4403,9 +4446,12 @@
         var left = exp - Date.now();
         var expCls = left <= 0 ? "gone" : "ok";
         var expTxt = left <= 0 ? "Expired" : fmtLeft(left);
+        var kind = e.shared ? "Shared" : "One-time";
+        var kindCls = e.shared ? "hc-shared" : "hc-onetime";
         return '<div class="hist-card">' +
           '<div class="hc-top">' +
             '<span class="hc-id">' + e.id + '</span>' +
+            '<span class="hc-kind ' + kindCls + '">' + kind + '</span>' +
             '<span class="hc-exp ' + expCls + '">' + expTxt + '</span>' +
           '</div>' +
           '<div class="hc-meta">' + (e.files || 1) + " file" + ((e.files || 1) > 1 ? "s" : "") +
